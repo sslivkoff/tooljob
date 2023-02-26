@@ -49,7 +49,7 @@ class SqlTracker(tracker.Tracker):
             ],
         }
         jobs_table = toolsql.normalize_shorthand_table_schema(raw_schema)
-        return {'name': 'toolbatch', 'tables': {'jobs': jobs_table}}
+        return {'name': 'tooljob', 'tables': {'jobs': jobs_table}}
 
     def create_db_tables(self) -> None:
         db_schema = self.get_db_schema()
