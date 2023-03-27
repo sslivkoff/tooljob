@@ -46,18 +46,18 @@ class Batch:
         output_filetype: str | None = None,
         db_config: toolsql.DBConfig | None = None,
         bucket_path: str | None = None,
+        name: str | None = None,
     ) -> None:
 
-        # set jobs
+        self.name = name
         self.jobs = jobs
-
-        # set tracker
         self.tracker = trackers.create_tracker(
             tracker=tracker,
             output_dir=output_dir,
             output_filetype=output_filetype,
             db_config=db_config,
             bucket_path=bucket_path,
+            batch=self,
         )
 
     #
@@ -141,7 +141,12 @@ class Batch:
     #
 
     def get_remaining_jobs(self) -> typing.Sequence[int]:
-        return self.are_jobs_complete(range(self.get_n_jobs()))
+        jobs = range(self.get_n_jobs())
+        return [
+            j
+            for j, complete in enumerate(self.are_jobs_complete(jobs))
+            if not complete
+        ]
 
     def are_jobs_complete(
         self, indices: typing.Sequence[int]
