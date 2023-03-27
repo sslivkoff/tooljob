@@ -22,6 +22,9 @@ class FileTracker(tracker.Tracker):
     ) -> None:
         self.output_dir = output_dir
         self.output_filetype = output_filetype
+        if not os.path.isdir(output_dir):
+            print('output_dir does not exist, creating now')
+            os.makedirs(output_dir)
         super().__init__(**kwargs)
 
     #
