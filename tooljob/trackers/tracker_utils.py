@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import typing
 
-from . import tracker
-
 if typing.TYPE_CHECKING:
 
     import toolsql
 
     from .. import batch_class
+    from . import tracker
 
 
 def create_tracker(
