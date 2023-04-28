@@ -17,7 +17,7 @@ def create_tracker(
     output_filetype: str | None = None,
     db_config: toolsql.DBConfig | None = None,
     bucket_path: str | None = None,
-    batch: batch_class.Batch = None,
+    batch: batch_class.Batch | None = None,
 ) -> tracker.Tracker:
 
     if tracker is None:

@@ -343,7 +343,7 @@ class Batch:
         names = [self.get_job_name(i) for i in range(self.get_n_jobs())]
         times = [self.get_job_end_time(i) for i in range(self.get_n_jobs())]
         df = pl.from_dict({'job': names, 'times': times})
-        df = df.with_column(
+        df = df.with_columns(
             (pl.col('times') / sample_time).cast(int).alias('sample')
         )
         df = df.with_columns(
