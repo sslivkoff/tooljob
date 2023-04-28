@@ -3,5 +3,6 @@ from __future__ import annotations
 import typing
 
 
-JobData = typing.Mapping[str, typing.Any]
+if typing.TYPE_CHECKING:
+    JobData = typing.Mapping[str, typing.Any]
 

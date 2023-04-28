@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 import typing
 
-import toolstr
-
 from .. import spec
 from . import tracker
 
@@ -93,6 +91,8 @@ class FileTracker(tracker.Tracker):
             return None
 
     def print_status(self) -> None:
+        import toolstr
+
         dirsize = 0
         for f in os.listdir(self.output_dir):
             path = os.path.join(self.output_dir, f)

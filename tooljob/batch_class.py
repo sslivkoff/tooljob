@@ -1,27 +1,20 @@
 from __future__ import annotations
 
 import concurrent
-import hashlib
-import json
 import time
 import typing
 
-from typing_extensions import Literal
-
 if typing.TYPE_CHECKING:
+    from typing_extensions import Literal
+
     import polars as pl
-
     import toolsql
-
-import toolstr
-import tooltime
 
 from . import spec
 from . import trackers
 
 
 class Batch:
-
     name: str | None = None
     parameters: typing.Sequence[str]
     jobs: typing.Sequence[spec.JobData] | None = None
@@ -48,7 +41,6 @@ class Batch:
         bucket_path: str | None = None,
         name: str | None = None,
     ) -> None:
-
         self.name = name
         self.jobs = jobs
         self.tracker = trackers.create_tracker(
@@ -160,6 +152,9 @@ class Batch:
     def get_job_hash(
         self, i: int | None = None, *, job_data: spec.JobData | None = None
     ) -> str:
+        import hashlib
+        import json
+
         if job_data is None:
             if i is None:
                 raise Exception('must specify i or job_hash')
@@ -189,6 +184,7 @@ class Batch:
         executor: Literal['serial', 'parallel'] = 'parallel',
         n_processes: int | None = None,
     ) -> None:
+        import tooltime
 
         self.print_status()
 
@@ -291,11 +287,15 @@ class Batch:
     #
 
     def print_status(self) -> None:
+        import toolstr
+
         toolstr.print_text_box(str(type(self).__name__) + ' Job Summary')
         print('- n_jobs:', self.get_n_jobs())
         print('- n_remaining:', len(self.get_remaining_jobs()))
 
     def print_summary(self) -> None:
+        import toolstr
+
         toolstr.print_header('Parameters')
         for parameter in self.parameters:
             toolstr.print_bullet(key=parameter, value=getattr(self, parameter))
@@ -307,6 +307,8 @@ class Batch:
         jobs: typing.Sequence[int],
         **kwargs: typing.Any,
     ) -> None:
+        import toolstr
+        import tooltime
 
         print('end time: ', tooltime.timestamp_to_iso_pretty(end_time))
 
@@ -336,7 +338,6 @@ class Batch:
         )
 
     def summarize_jobs_per_second(self, sample_time: int = 60) -> pl.DataFrame:
-
         import polars as pl
 
         names = [self.get_job_name(i) for i in range(self.get_n_jobs())]
