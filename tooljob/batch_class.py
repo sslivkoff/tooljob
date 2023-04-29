@@ -42,10 +42,12 @@ class Batch:
         bucket_path: str | None = None,
         name: str | None = None,
         styles: toolcli.StyleTheme | None = None,
+        verbose: bool = False,
     ) -> None:
         self.name = name
         self.jobs = jobs
         self.styles = styles
+        self.verbose = verbose
         self.tracker = trackers.create_tracker(
             tracker=tracker,
             output_dir=output_dir,
@@ -324,12 +326,23 @@ class Batch:
             styles=self.styles,
         )
 
-    def print_summary(self) -> None:
-        import toolstr
+        if self.verbose:
+            import types
 
-        toolstr.print_header('Parameters')
-        for parameter in self.parameters:
-            toolstr.print_bullet(key=parameter, value=getattr(self, parameter))
+            print()
+            print()
+            toolstr.print_header(toolstr.add_style('Parameters', title_style), style=style)
+            for parameter in vars(self).keys():
+                value = getattr(self, parameter)
+                if not parameter.startswith('_') and not isinstance(
+                    value, types.MethodType
+                ):
+                    toolstr.print_bullet(
+                        key=parameter,
+                        value=value,
+                        styles=self.styles,
+                    )
+            print()
 
     def print_conclusion(
         self,
