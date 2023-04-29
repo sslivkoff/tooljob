@@ -8,6 +8,7 @@ if typing.TYPE_CHECKING:
     from typing_extensions import Literal
 
     import polars as pl
+    import toolcli
     import toolsql
 
 from . import spec
@@ -40,9 +41,11 @@ class Batch:
         db_config: toolsql.DBConfig | None = None,
         bucket_path: str | None = None,
         name: str | None = None,
+        styles: toolcli.StyleTheme | None = None,
     ) -> None:
         self.name = name
         self.jobs = jobs
+        self.styles = styles
         self.tracker = trackers.create_tracker(
             tracker=tracker,
             output_dir=output_dir,
@@ -184,6 +187,7 @@ class Batch:
         executor: Literal['serial', 'parallel'] = 'parallel',
         n_processes: int | None = None,
     ) -> None:
+        import toolstr
         import tooltime
 
         self.print_status()
@@ -194,8 +198,13 @@ class Batch:
             return
 
         start_time = time.time()
-        print('\n\nRunning remaining jobs...\n')
-        print('start time: ', tooltime.timestamp_to_iso_pretty(start_time))
+        print('\nRunning remaining jobs...\n')
+        toolstr.print_bullet(
+            key='start time',
+            value=tooltime.timestamp_to_iso_pretty(start_time),
+            bullet_str='',
+            styles=self.styles,
+        )
 
         # execute jobs
         if executor == 'serial':
@@ -289,9 +298,31 @@ class Batch:
     def print_status(self) -> None:
         import toolstr
 
-        toolstr.print_text_box(str(type(self).__name__) + ' Job Summary')
-        print('- n_jobs:', self.get_n_jobs())
-        print('- n_remaining:', len(self.get_remaining_jobs()))
+        if self.styles is not None:
+            title_style = self.styles.get('metavar')
+        else:
+            title_style = None
+
+        if self.name is None:
+            name = str(type(self).__name__)
+        else:
+            name = self.name
+        if self.styles is not None:
+            style = self.styles.get('content')
+        else:
+            style = None
+        toolstr.print_text_box(
+            toolstr.add_style(name + ' Job Summary', style=title_style),
+            style=style,
+        )
+        toolstr.print_bullet(
+            key='n_jobs', value=self.get_n_jobs(), styles=self.styles
+        )
+        toolstr.print_bullet(
+            key='n_remaining',
+            value=len(self.get_remaining_jobs()),
+            styles=self.styles,
+        )
 
     def print_summary(self) -> None:
         import toolstr
@@ -310,31 +341,45 @@ class Batch:
         import toolstr
         import tooltime
 
-        print('end time: ', tooltime.timestamp_to_iso_pretty(end_time))
+        toolstr.print_bullet(
+            key='end time',
+            value='  ' + tooltime.timestamp_to_iso_pretty(end_time),
+            bullet_str='',
+            styles=self.styles,
+        )
 
         done_jobs = len([self.tracker.is_job_complete(i) for i in jobs])
+        print()
         print(done_jobs, 'jobs completed')
 
         duration = end_time - start_time
         seconds_per_job = duration / done_jobs
         jobs_per_second = done_jobs / duration
         print()
-        print('- duration:', toolstr.format(duration, decimals=3), 'seconds')
-        print(
-            '- seconds per job:',
-            toolstr.format(seconds_per_job, decimals=3),
+        toolstr.print_bullet(
+            key='duration',
+            value=toolstr.format(duration, decimals=3) + ' seconds',
+            styles=self.styles,
         )
-        print(
-            '- jobs per minute:',
-            toolstr.format(jobs_per_second * 86400 / 24 / 60, decimals=2),
+        toolstr.print_bullet(
+            key='seconds per job',
+            value=toolstr.format(seconds_per_job, decimals=3),
+            styles=self.styles,
         )
-        print(
-            '- jobs per hour:',
-            toolstr.format(jobs_per_second * 86400 / 24, decimals=2),
+        toolstr.print_bullet(
+            key='jobs per minute',
+            value=toolstr.format(jobs_per_second * 86400 / 24 / 60, decimals=2),
+            styles=self.styles,
         )
-        print(
-            '- jobs per day:',
-            toolstr.format(jobs_per_second * 86400, decimals=2),
+        toolstr.print_bullet(
+            key='jobs per hour',
+            value=toolstr.format(jobs_per_second * 86400 / 24, decimals=2),
+            styles=self.styles,
+        )
+        toolstr.print_bullet(
+            key='jobs per day',
+            value=toolstr.format(jobs_per_second * 86400, decimals=2),
+            styles=self.styles,
         )
 
     def summarize_jobs_per_second(self, sample_time: int = 60) -> pl.DataFrame:
