@@ -17,7 +17,6 @@ from . import trackers
 
 class Batch:
     name: str | None = None
-    parameters: typing.Sequence[str]
     jobs: typing.Sequence[spec.JobData] | None = None
 
     #
@@ -326,16 +325,22 @@ class Batch:
             styles=self.styles,
         )
 
+        self.print_additional_status()
+
         if self.verbose:
             import types
 
             print()
             print()
-            toolstr.print_header(toolstr.add_style('Parameters', title_style), style=style)
+            toolstr.print_header(
+                toolstr.add_style('Parameters', title_style), style=style
+            )
             for parameter in vars(self).keys():
                 value = getattr(self, parameter)
-                if not parameter.startswith('_') and not isinstance(
-                    value, types.MethodType
+                if (
+                    not parameter.startswith('_')
+                    and not isinstance(value, types.MethodType)
+                    and parameter not in ['styles', 'tracker']
                 ):
                     toolstr.print_bullet(
                         key=parameter,
@@ -344,12 +349,14 @@ class Batch:
                     )
             print()
 
+    def print_additional_status(self) -> None:
+        pass
+
     def print_conclusion(
         self,
         start_time: int | float,
         end_time: int | float,
         jobs: typing.Sequence[int],
-        **kwargs: typing.Any,
     ) -> None:
         import toolstr
         import tooltime
@@ -394,6 +401,19 @@ class Batch:
             value=toolstr.format(jobs_per_second * 86400, decimals=2),
             styles=self.styles,
         )
+        self.print_additional_conclusion(
+            start_time=start_time,
+            end_time=end_time,
+            jobs=jobs,
+        )
+
+    def print_additional_conclusion(
+        self,
+        start_time: int | float,
+        end_time: int | float,
+        jobs: typing.Sequence[int],
+    ) -> None:
+        pass
 
     def summarize_jobs_per_second(self, sample_time: int = 60) -> pl.DataFrame:
         import polars as pl
