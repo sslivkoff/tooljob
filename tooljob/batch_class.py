@@ -37,6 +37,7 @@ class Batch:
         tracker: str | None = None,
         output_dir: str | None = None,
         output_filetype: str | None = None,
+        outputs: typing.Mapping[str, str] | None = None,
         db_config: toolsql.DBConfig | None = None,
         bucket_path: str | None = None,
         name: str | None = None,
@@ -71,17 +72,19 @@ class Batch:
         i: int | None = None,
         *,
         job_data: spec.JobData | None = None,
+        parameters: typing.Mapping[str, str] | None = None,
     ) -> str:
         if job_data is None:
             if i is None:
                 raise Exception('must specify job_data or i')
             job_data = self.get_job_data(i)
-        simple_types = (str, int, bool)
-        if isinstance(job_data, simple_types):
+
+        if isinstance(job_data, (str, int, bool)):
             return self.get_job_list_name() + str(job_data)
+
         elif isinstance(job_data, dict):
             for key, value in job_data.items():
-                if not isinstance(value, simple_types):
+                if not isinstance(value, (str, int, bool)):
                     raise NotImplementedError(
                         'must define job_name() for this type of job_data'
                     )
@@ -89,7 +92,14 @@ class Batch:
                 key + '_' + job_data[key]
                 for key, value in sorted(job_data.items())
             ]
+
+            # add additional parameters to name
+            if parameters is not None:
+                for key, value in sorted(parameters.items()):
+                    tokens.append(key + '_' + value)
+
             return self.get_job_list_name() + '__'.join(tokens)
+
         else:
             raise NotImplementedError(
                 'must define get_job_name() for this type of job_data'

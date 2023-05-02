@@ -57,17 +57,6 @@ class FileTracker(tracker.Tracker):
         filename = self.get_job_output_filename(i=i, job_data=job_data)
         return os.path.join(self.output_dir, filename)
 
-    def get_job_output_file_names(self) -> typing.Sequence[str]:
-        return [
-            self.get_job_output_filename(i)
-            for i in range(self.batch.get_n_jobs())
-        ]
-
-    def get_job_output_paths(self) -> typing.Sequence[str]:
-        return [
-            self.get_job_output_path(i) for i in range(self.batch.get_n_jobs())
-        ]
-
     def parse_job_output_path(self, path: str) -> typing.Any:
         job_name, ext = os.path.splitext(os.path.basename(path))
         return self.batch.parse_job_name(job_name)
@@ -93,10 +82,10 @@ class FileTracker(tracker.Tracker):
     def print_status(self) -> None:
         import toolstr
 
-        dirsize = 0
-        for f in os.listdir(self.output_dir):
-            path = os.path.join(self.output_dir, f)
+        total_size = 0
+        for i in range(self.batch.get_n_jobs()):
+            path = self.get_job_output_path(i)
             if os.path.isfile(path):
-                dirsize += os.path.getsize(path)
-        print('- output_dir size:', toolstr.format_nbytes(dirsize))
+                total_size = os.path.getsize(path)
+        print('- output_dir size:', toolstr.format_nbytes(total_size))
 
