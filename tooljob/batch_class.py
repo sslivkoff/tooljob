@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import concurrent
 import time
 import typing
 
@@ -46,6 +45,8 @@ class Batch:
     ) -> None:
         self.name = name
         self.jobs = jobs
+        if styles is None:
+            styles = {}
         self.styles = styles
         self.verbose = verbose
         self.tracker = trackers.create_tracker(
@@ -198,23 +199,25 @@ class Batch:
         executor: Literal['serial', 'parallel'] = 'parallel',
         n_processes: int | None = None,
     ) -> None:
-        import toolstr
         import tooltime
 
         self.print_status()
 
+        # check whether to circuit break
         remaining_jobs = self.get_remaining_jobs()
         if len(remaining_jobs) == 0:
             print('\nAll jobs already completed')
             return
 
+        # print summary
         start_time = time.time()
-        print('\nRunning remaining jobs...\n')
-        toolstr.print_bullet(
+        print()
+        print()
+        self.print_header('Running remaining jobs...')
+        self.print_bullet(
             key='start time',
             value=tooltime.timestamp_to_iso_pretty(start_time),
             bullet_str='',
-            styles=self.styles,
         )
 
         # execute jobs
@@ -321,58 +324,72 @@ class Batch:
     # # summary
     #
 
-    def print_status(self) -> None:
+    def print_text_box(self, text: str) -> None:
         import toolstr
 
-        if self.styles is not None:
-            title_style = self.styles.get('metavar')
-        else:
-            title_style = None
-
-        if self.name is None:
-            name = str(type(self).__name__)
-        else:
-            name = self.name
-        if self.styles is not None:
-            style = self.styles.get('content')
-        else:
-            style = None
         toolstr.print_text_box(
-            toolstr.add_style(name + ' Job Summary', style=title_style),
-            style=style,
+            text,
+            text_style=self.styles.get('metavar'),
+            style=self.styles.get('content'),
         )
-        toolstr.print_bullet(
-            key='n_jobs', value=self.get_n_jobs(), styles=self.styles
+
+    def print_header(self, text: str) -> None:
+        import toolstr
+
+        toolstr.print_header(
+            text,
+            text_style=self.styles.get('metavar'),
+            style=self.styles.get('content'),
         )
+
+    def print_bullet(
+        self, key: str, value: typing.Any, **kwargs: typing.Any
+    ) -> None:
+        import toolstr
+
+        toolstr.print_bullet(key=key, value=value, styles=self.styles, **kwargs)
+
+    def get_attribute_list(self) -> typing.Sequence[str]:
+        attributes = list(vars(self).keys())
+        if self.jobs is None:
+            del attributes[attributes.index('jobs')]
+        return attributes
+
+    def get_formatted_attribute(self, key: str) -> str | None:
+        return str(getattr(self, key))
+
+    def print_status(self) -> None:
+        import types
+        import toolstr
+
+        self.print_text_box('Collecting dataset ' + self.get_job_list_name())
+        print()
+        self.print_header('Parameters')
+        self.print_bullet(key='n_jobs', value=self.get_n_jobs())
         toolstr.print_bullet(
-            key='n_remaining',
+            key='n_jobs_remaining',
             value=len(self.get_remaining_jobs()),
-            styles=self.styles,
         )
 
-        self.print_additional_status()
-
-        if self.verbose:
-            import types
-
-            print()
-            print()
-            toolstr.print_header(
-                toolstr.add_style('Parameters', title_style), style=style
-            )
-            for parameter in vars(self).keys():
-                value = getattr(self, parameter)
+        for obj, skip_keys in [
+            (self, ['styles', 'tracker']),
+            (self.tracker, ['batch']),
+        ]:
+            for parameter in obj.get_attribute_list():  # type: ignore
+                if hasattr(obj, parameter):
+                    value = getattr(obj, parameter)
+                else:
+                    value = None
                 if (
                     not parameter.startswith('_')
                     and not isinstance(value, types.MethodType)
-                    and parameter not in ['styles', 'tracker']
+                    and parameter not in skip_keys
                 ):
-                    toolstr.print_bullet(
-                        key=parameter,
-                        value=value,
-                        styles=self.styles,
-                    )
-            print()
+                    value_str = obj.get_formatted_attribute(parameter)  # type: ignore
+                    if value_str is not None:
+                        self.print_bullet(key=parameter, value=value_str)
+
+        self.print_additional_status()
 
     def print_additional_status(self) -> None:
         pass
@@ -386,50 +403,44 @@ class Batch:
         import toolstr
         import tooltime
 
-        toolstr.print_bullet(
+        self.print_bullet(
             key='end time',
             value='  ' + tooltime.timestamp_to_iso_pretty(end_time),
             bullet_str='',
-            styles=self.styles,
         )
 
         done_jobs = len([self.tracker.is_job_complete(i) for i in jobs])
         print()
         print(done_jobs, 'jobs completed')
+        print()
+        print()
+        self.print_header('Execution Summary')
 
         duration = end_time - start_time
         seconds_per_job = duration / done_jobs
         jobs_per_second = done_jobs / duration
-        print()
-        toolstr.print_bullet(
-            key='duration',
-            value=toolstr.format(duration, decimals=3) + ' seconds',
-            styles=self.styles,
+        jobs_per_minute = jobs_per_second * 60
+        jobs_per_day = jobs_per_second * 86400
+        self.print_bullet(
+            'duration',
+            toolstr.format(duration, decimals=3) + ' seconds',
         )
-        toolstr.print_bullet(
-            key='seconds per job',
-            value=toolstr.format(seconds_per_job, decimals=3),
-            styles=self.styles,
+        self.print_bullet(
+            'seconds per job',
+            toolstr.format(seconds_per_job, decimals=3),
         )
-        toolstr.print_bullet(
-            key='jobs per minute',
-            value=toolstr.format(jobs_per_second * 86400 / 24 / 60, decimals=2),
-            styles=self.styles,
+        self.print_bullet(
+            'jobs per minute', toolstr.format(jobs_per_minute, decimals=2),
         )
-        toolstr.print_bullet(
-            key='jobs per hour',
-            value=toolstr.format(jobs_per_second * 86400 / 24, decimals=2),
-            styles=self.styles,
+        self.print_bullet(
+            'jobs per hour',
+            toolstr.format(jobs_per_second * 86400 / 24, decimals=2),
         )
-        toolstr.print_bullet(
-            key='jobs per day',
-            value=toolstr.format(jobs_per_second * 86400, decimals=2),
-            styles=self.styles,
+        self.print_bullet(
+            'jobs per day', toolstr.format(jobs_per_day, decimals=2),
         )
         self.print_additional_conclusion(
-            start_time=start_time,
-            end_time=end_time,
-            jobs=jobs,
+            start_time=start_time, end_time=end_time, jobs=jobs
         )
 
     def print_additional_conclusion(

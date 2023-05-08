@@ -17,3 +17,9 @@ class Tracker:
     ) -> bool:
         raise NotImplementedError('is_job_complete() not implemented')
 
+    def get_attribute_list(self) -> typing.Sequence[str]:
+        return list(vars(self).keys())
+
+    def get_formatted_attribute(self, key: str) -> str | None:
+        return str(getattr(self, key))
+
