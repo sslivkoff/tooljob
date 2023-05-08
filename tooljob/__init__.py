@@ -5,5 +5,5 @@ from .trackers import *
 from .spec import *
 
 
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 
