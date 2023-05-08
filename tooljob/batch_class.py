@@ -233,7 +233,10 @@ class Batch:
         )
 
     def serial_execute(self, jobs: typing.Sequence[int]) -> None:
-        for job in jobs:
+        import tqdm
+
+        color = self._get_progress_bar_color()
+        for job in tqdm.tqdm(jobs, colour=color):
             self.run_job(job)
 
     def parallel_execute(
@@ -241,9 +244,21 @@ class Batch:
         jobs: typing.Sequence[int],
         n_processes: int | None = None,
     ) -> None:
+        import concurrent.futures
+        import tqdm
+
+        color = self._get_progress_bar_color()
         with concurrent.futures.ProcessPoolExecutor(n_processes) as executor:
             futures = [executor.submit(self.run_job, i=job) for job in jobs]
-            concurrent.futures.wait(futures)
+            with tqdm.tqdm(total=len(jobs), colour=color) as pbar:
+                for future in concurrent.futures.as_completed(futures):
+                    pbar.update(1)
+
+    def _get_progress_bar_color(self) -> str | None:
+        if self.styles is None:
+            return None
+        else:
+            return self.styles.get('content')
 
     def run_job(self, i: int) -> None:
         self.start_job(i=i)
