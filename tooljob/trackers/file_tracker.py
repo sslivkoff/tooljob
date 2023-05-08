@@ -18,7 +18,7 @@ class FileTracker(tracker.Tracker):
         output_filetype: str,
         **kwargs: typing.Any,
     ) -> None:
-        self.output_dir = output_dir
+        self.output_dir = os.path.abspath(os.path.expanduser(output_dir))
         self.output_filetype = output_filetype
         if not os.path.isdir(output_dir):
             print('output_dir does not exist, creating now')

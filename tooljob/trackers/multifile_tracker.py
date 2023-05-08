@@ -13,6 +13,13 @@ def _get_output_dict(
     default_output_dir: str | None = None,
     default_output_filetype: str | None = None,
 ) -> spec.OutputSpec:
+    if output_dir is not None:
+        output_dir = os.path.abspath(os.path.expanduser(output_dir))
+    if default_output_dir is not None:
+        default_output_dir = os.path.abspath(
+            os.path.expanduser(default_output_dir)
+        )
+
     if output_dir is None:
         if default_output_dir is None:
             raise Exception('must specify output_dir for each output')
@@ -68,7 +75,9 @@ class MultifileTracker(tracker.Tracker):
                     raise Exception()
         elif isinstance(outputs, dict):
             for name, output in outputs.items():
-                if output.get('name') is not None and name != output.get('name'):
+                if output.get('name') is not None and name != output.get(
+                    'name'
+                ):
                     raise Exception('names do not match in outputs spec')
                 strict_outputs[name] = _get_output_dict(
                     default_output_dir=output_dir,
@@ -98,7 +107,9 @@ class MultifileTracker(tracker.Tracker):
     ) -> bool:
         return all(
             os.path.exists(path)
-            for path in self.get_job_output_paths(i=i, job_data=job_data).values()
+            for path in self.get_job_output_paths(
+                i=i, job_data=job_data
+            ).values()
         )
 
     #
