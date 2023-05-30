@@ -49,11 +49,11 @@ class MultifileTracker(tracker.Tracker):
     def __init__(
         self,
         outputs: spec.ShorthandOutputsSpec,
-        output_dir: str | None,
-        output_filetype: str | None,
+        output_dir: str | None = None,
+        output_filetype: str | None = None,
         **kwargs: typing.Any,
     ) -> None:
-        # compile output specifications
+        # compile outputs specifications
         strict_outputs: typing.MutableMapping[str, spec.OutputSpec] = {}
         if isinstance(outputs, list):
             for output in outputs:

@@ -24,7 +24,9 @@ def create_tracker(
 
     # determine tracker
     if tracker is None:
-        if output_dir is not None and output_filetype is not None:
+        if outputs is not None:
+            tracker = 'multifile'
+        elif output_dir is not None and output_filetype is not None:
             tracker = 'file'
         elif db_config is not None:
             tracker = 'sql'
