@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing
 
 if typing.TYPE_CHECKING:
-
     import toolsql
 
     from .. import batch_class
@@ -21,7 +20,6 @@ def create_tracker(
     bucket_path: str | None = None,
     batch: batch_class.Batch | None = None,
 ) -> tracker.Tracker:
-
     # determine tracker
     if tracker is None:
         if outputs is not None:
